@@ -1,23 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Input } from "@/components/Input/Input";
 import { showToast } from "@/components/Toast/Toast";
-import Link from "next/link";
 
 interface FormErrors {
-  fullName?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
 }
 
-export default function SignupForm() {
-  const [fullName, setFullName] = useState("");
+export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [shakeError, setShakeError] = useState(false);
@@ -25,13 +22,6 @@ export default function SignupForm() {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-
-    // Full Name validation
-    if (!fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    } else if (fullName.trim().length < 2) {
-      newErrors.fullName = "Full name must be at least 2 characters";
-    }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,21 +36,6 @@ export default function SignupForm() {
       newErrors.password = "Password is required";
     } else if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
-    } else if (!/(?=.*[a-z])/.test(password)) {
-      newErrors.password =
-        "Password must contain at least one lowercase letter";
-    } else if (!/(?=.*[A-Z])/.test(password)) {
-      newErrors.password =
-        "Password must contain at least one uppercase letter";
-    } else if (!/(?=.*\d)/.test(password)) {
-      newErrors.password = "Password must contain at least one number";
-    }
-
-    // Confirm Password validation
-    if (!confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -83,47 +58,25 @@ export default function SignupForm() {
 
     setLoading(true);
 
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fullName,
-          email,
-          password,
-        }),
-      });
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
 
-      const data = await res.json();
+    setLoading(false);
 
-      if (!res.ok) {
-        setLoading(false);
-        triggerShakeAnimation();
-        console.error("Signup error response:", data);
-        showToast(data.error || "Signup failed", "error");
-        return;
-      }
-
-      setLoading(false);
-      showToast("Account created successfully! Redirecting...", "success");
-      // Clear form
-      setFullName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 2000);
-    } catch (err) {
-      setLoading(false);
+    if (res?.error) {
       triggerShakeAnimation();
-      console.error("Signup fetch error:", err);
-      showToast(
-        "Signup failed. Please check your connection and try again.",
-        "error"
-      );
+      showToast(res.error || "Invalid email or password", "error");
+      return;
     }
+
+    // Successful sign in
+    showToast("Logged in successfully! Redirecting...", "success");
+    setTimeout(() => {
+      router.push("/");
+    }, 2000);
   };
 
   return (
@@ -137,29 +90,19 @@ export default function SignupForm() {
         <div className="mb-10 text-center">
           <div className="inline-block mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-              ✓
+              🔐
             </div>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
-            Create Account
+            Welcome Back
           </h1>
           <p className="text-gray-600 text-sm font-medium">
-            Join us today for a better experience
+            Sign in to your account to continue
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-0">
-          <Input
-            label="Full Name"
-            type="text"
-            value={fullName}
-            onChange={setFullName}
-            error={errors.fullName}
-            placeholder=" "
-            autoComplete="name"
-          />
-
           <Input
             label="Email Address"
             type="email"
@@ -178,19 +121,18 @@ export default function SignupForm() {
             error={errors.password}
             showPasswordToggle
             placeholder=" "
-            autoComplete="new-password"
+            autoComplete="current-password"
           />
 
-          <Input
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={setConfirmPassword}
-            error={errors.confirmPassword}
-            showPasswordToggle
-            placeholder=" "
-            autoComplete="new-password"
-          />
+          {/* Forgot Password Link */}
+          <div className="flex justify-end mb-6 mt-2">
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           {/* Submit Button */}
           <button
@@ -224,10 +166,10 @@ export default function SignupForm() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Creating Account...
+                Signing in...
               </span>
             ) : (
-              "Sign Up"
+              "Sign In"
             )}
           </button>
         </form>
@@ -236,24 +178,24 @@ export default function SignupForm() {
         <div className="my-8 flex items-center gap-3">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
           <span className="text-gray-500 text-xs font-bold px-2">
-            HAVE AN ACCOUNT?
+            NEW USER?
           </span>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent via-gray-300 to-transparent"></div>
         </div>
 
-        {/* Login Link */}
+        {/* Signup Link */}
         <div className="text-center">
           <Link
-            href="/auth/login"
+            href="/auth/signup"
             className="inline-block w-full py-3 px-4 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition-all duration-300 hover:shadow-md"
           >
-            Log In
+            Create Account
           </Link>
         </div>
 
         {/* Footer */}
         <p className="text-xs text-gray-600 text-center mt-6 leading-relaxed">
-          By signing up, you agree to our{" "}
+          By signing in, you agree to our{" "}
           <a href="#" className="text-blue-600 hover:underline font-semibold">
             Terms of Service
           </a>{" "}

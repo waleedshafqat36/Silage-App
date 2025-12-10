@@ -14,13 +14,27 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json(
+        { error: "Full name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     // Check if user already exists
     const existing = await User.findOne({ email });
     if (existing) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "Email already registered. Please log in instead." },
         { status: 409 }
       );
     }
@@ -34,6 +48,7 @@ export async function POST(req: Request) {
     // Return user info (without password)
     return NextResponse.json(
       {
+        message: "Account created successfully",
         user: {
           id: user._id,
           name: user.name,
@@ -45,6 +60,24 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Signup error:", error);
-    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
+
+    if (error instanceof Error) {
+      // Handle MongoDB duplicate key error
+      if (
+        error.message.includes("duplicate key") ||
+        error.message.includes("E11000")
+      ) {
+        return NextResponse.json(
+          { error: "Email already registered. Please log in instead." },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { error: "Signup failed. Please try again." },
+      { status: 500 }
+    );
   }
 }
