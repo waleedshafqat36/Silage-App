@@ -26,36 +26,67 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials) return null;
-        await import("@/lib/mongodb"); // make sure mongoose connected
-        const user = await User.findOne({ email: credentials.email }).lean();
-        if (!user) return null;
+        try {
+          if (!credentials || !credentials.email || !credentials.password) {
+            return null;
+          }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-        if (!isValid) return null;
+          // Ensure DB connection
+          await import("@/lib/mongodb");
 
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          const user = await User.findOne({
+            email: credentials.email.toLowerCase().trim(),
+          }).lean();
+
+          if (!user) {
+            console.log("[Auth] User not found:", credentials.email);
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isValid) {
+            console.log("[Auth] Invalid password for user:", credentials.email);
+            return null;
+          }
+
+          console.log(
+            "[Auth] User authenticated successfully:",
+            credentials.email
+          );
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role || "user",
+          };
+        } catch (error) {
+          console.error("[Auth] Authorization error:", error);
+          return null;
+        }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user && typeof user === "object" && "role" in user) {
-        token.role = (user as { role?: string }).role || "";
+      if (user) {
+        token.id = user.id;
+        token.role = (user as { role?: string }).role || "user";
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && "role" in token) {
-        (session.user as { role?: string }).role = token.role as string;
+      if (session.user) {
+        (session.user as { id?: string; role?: string }).id = token.id as
+          | string
+          | undefined;
+        (session.user as { id?: string; role?: string }).role = token.role as
+          | string
+          | undefined;
       }
       return session;
     },

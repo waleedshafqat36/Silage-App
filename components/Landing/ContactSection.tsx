@@ -70,7 +70,7 @@ export default function ContactSection() {
               </h2>
               <p className="text-xl text-gray-600">
                 Have questions about KM Silage? Our expert team is ready to help
-                you improve your farm's productivity.
+                you improve your farm productivity.
               </p>
             </div>
 
@@ -263,7 +263,7 @@ export default function ContactSection() {
               </button>
 
               <p className="text-xs text-gray-500 text-center">
-                We'll respond to your message within 24 hours.
+                We will respond to your message within 24 hours.
               </p>
             </form>
           </div>

@@ -128,9 +128,9 @@ export default function WhyChooseSection() {
               {/* Testimonial Quote */}
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-600">
                 <p className="text-sm text-gray-700 italic">
-                  "Since switching to KM Silage, our farm's productivity has
-                  increased significantly and our animals are healthier than
-                  ever."
+                  &ldquo;Since switching to KM Silage, our farm&apos;s
+                  productivity has increased significantly and our animals are
+                  healthier than ever.&rdquo;
                 </p>
                 <p className="text-xs font-semibold text-green-700 mt-2">
                   - Farmer Raj, Punjab

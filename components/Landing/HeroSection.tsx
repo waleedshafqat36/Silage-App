@@ -19,7 +19,7 @@ export default function HeroSection() {
                 🌾 Premium Animal Feed Preservation
               </div>
               <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent leading-tight">
-                Preserve Nature's Best Nutrition
+                Preserve Nature&apos;s Best Nutrition
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl">
                 KM Silage delivers superior feed preservation solutions for
@@ -30,12 +30,6 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a
-                href="#contact"
-                className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-              >
-                Get Started
-              </a>
               <a
                 href="#how-it-works"
                 className="px-8 py-4 border-2 border-green-600 text-green-600 font-bold rounded-lg hover:bg-green-50 transition-all duration-300"

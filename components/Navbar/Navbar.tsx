@@ -1,12 +1,13 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 import { showToast } from "@/components/Toast/Toast";
 
 export default function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { data: session } = useSession();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -40,8 +41,55 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right Side - Logout Button */}
+          {/* Right Side - Blogs, Dashboard & Logout Buttons */}
           <div className="flex items-center gap-4">
+            {/* Blogs Link - For All Users */}
+            {session?.user && (
+              <Link
+                href="/blogs"
+                className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 shadow-md hover:shadow-lg"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17c0 5.25 3.07 9.772 7.555 11.979M12 6.253c5.5 0 10 4.745 10 10.747 0 5.25-3.07 9.772-7.555 11.979"
+                  />
+                </svg>
+                Blogs
+              </Link>
+            )}
+
+            {/* Dashboard Link - Only for Admins */}
+            {session?.user &&
+              (session.user as { role?: string })?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 active:scale-95 shadow-md hover:shadow-lg"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  Dashboard
+                </Link>
+              )}
+
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}

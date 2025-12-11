@@ -4,7 +4,7 @@ import AboutSection from "@/components/Landing/AboutSection";
 import WhyChooseSection from "@/components/Landing/WhyChooseSection";
 import HowItWorksSection from "@/components/Landing/HowItWorksSection";
 import TestimonialsSection from "@/components/Landing/TestimonialsSection";
-import ContactSection from "@/components/Landing/ContactSection";
+import BlogsSection from "@/components/Landing/BlogsSection";
 import Footer from "@/components/Landing/Footer";
 
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
       <WhyChooseSection />
       <HowItWorksSection />
       <TestimonialsSection />
-      <ContactSection />
+      <BlogsSection />
       <Footer />
     </main>
   );
