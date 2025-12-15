@@ -7,6 +7,7 @@ export async function POST(req: Request) {
   try {
     const { name, email, password } = await req.json();
 
+    // Validation
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -28,24 +29,40 @@ export async function POST(req: Request) {
       );
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log("[Signup] Connecting to MongoDB...");
+    // Connect to MongoDB
     await connectDB();
+    console.log("[Signup] MongoDB connected, creating user:", normalizedEmail);
 
     // Check if user already exists
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
+      console.log("[Signup] User already exists:", normalizedEmail);
       return NextResponse.json(
         { error: "Email already registered. Please log in instead." },
         { status: 409 }
       );
     }
 
-    // Hash password
+    // Hash password with bcrypt
     const hashed = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const user = await User.create({ name, email, password: hashed });
+    // Create new user in MongoDB
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password: hashed,
+      role: "user",
+    });
 
-    // Return user info (without password)
+    console.log(`[Signup] ✅ User created successfully in MongoDB:`, {
+      id: user._id,
+      email: normalizedEmail,
+    });
+
+    // Return success response (without password)
     return NextResponse.json(
       {
         message: "Account created successfully",
@@ -59,7 +76,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("[Signup] ❌ Error:", error);
 
     if (error instanceof Error) {
       // Handle MongoDB duplicate key error
@@ -72,7 +89,33 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Handle connection errors with clear messages
+      if (error.message.includes("ECONNREFUSED")) {
+        return NextResponse.json(
+          { error: "Cannot connect to MongoDB. Please check your MONGO_URI in .env.local and ensure your cluster is running." },
+          { status: 503 }
+        );
+      }
+
+      if (error.message.includes("querySrv") || error.message.includes("ENOTFOUND")) {
+        return NextResponse.json(
+          { error: "MongoDB cluster not found. Please verify your MONGO_URI is correct. Follow the MONGODB_ATLAS_SETUP.md guide." },
+          { status: 503 }
+        );
+      }
+
+      if (error.message.includes("authentication failed") || error.message.includes("unauthorized")) {
+        return NextResponse.json(
+          { error: "MongoDB authentication failed. Check your username and password in MONGO_URI." },
+          { status: 503 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: `Database error: ${error.message.substring(0, 100)}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

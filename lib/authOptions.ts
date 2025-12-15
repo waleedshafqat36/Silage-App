@@ -1,20 +1,17 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
-import clientPromise from "./mongodbClient";
 import User from "@/models/user";
+import { connectDB } from "./mongodb";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(
-    clientPromise as unknown as Parameters<typeof MongoDBAdapter>[0]
-  ),
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/login",
-    signOut: "/auth/signup",
+    signOut: "/auth/login",
     error: "/auth/login",
   },
   providers: [
@@ -28,35 +25,38 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials || !credentials.email || !credentials.password) {
+            console.log("[Auth] Missing credentials");
             return null;
           }
 
-          // Ensure DB connection
-          await import("@/lib/mongodb");
+          const email = credentials.email.toLowerCase().trim();
+          console.log("[Auth] Authenticating user:", email);
 
-          const user = await User.findOne({
-            email: credentials.email.toLowerCase().trim(),
-          }).lean();
+          // Connect to MongoDB
+          await connectDB();
+
+          // Find user by email
+          const user = await User.findOne({ email }).select("+password").lean();
 
           if (!user) {
-            console.log("[Auth] User not found:", credentials.email);
+            console.log("[Auth] User not found:", email);
             return null;
           }
 
+          console.log("[Auth] User found, verifying password");
+
+          // Verify password
           const isValid = await bcrypt.compare(
             credentials.password,
             user.password
           );
 
           if (!isValid) {
-            console.log("[Auth] Invalid password for user:", credentials.email);
+            console.log("[Auth] Invalid password for user:", email);
             return null;
           }
 
-          console.log(
-            "[Auth] User authenticated successfully:",
-            credentials.email
-          );
+          console.log("[Auth] ✅ User authenticated successfully:", email);
 
           return {
             id: user._id.toString(),
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role || "user",
           };
         } catch (error) {
-          console.error("[Auth] Authorization error:", error);
+          console.error("[Auth] ❌ Authorization error:", error);
           return null;
         }
       },
@@ -75,21 +75,20 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as { role?: string }).role || "user";
+        token.email = user.email;
+        token.name = user.name;
+        token.role = (user as any).role || "user";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string; role?: string }).id = token.id as
-          | string
-          | undefined;
-        (session.user as { id?: string; role?: string }).role = token.role as
-          | string
-          | undefined;
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
       }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: true,
 };

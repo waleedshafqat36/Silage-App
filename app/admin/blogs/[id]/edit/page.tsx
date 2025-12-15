@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AdminLayout from "@/components/Admin/AdminLayout";
 import { showToast } from "@/components/Toast/Toast";
@@ -11,6 +11,8 @@ export default function EditBlogPage() {
   const params = useParams();
   const blogId = params.id as string;
   const { data: session } = useSession();
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -70,6 +72,85 @@ export default function EditBlogPage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleImagePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+
+        showToast("Converting image to base64...", "info");
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          const imgMarkdown = `\n![image](${base64})\n`;
+          
+          if (contentRef.current) {
+            const textarea = contentRef.current;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = formData.content.substring(0, start);
+            const after = formData.content.substring(end);
+            
+            const newContent = before + imgMarkdown + after;
+            setFormData((prev) => ({
+              ...prev,
+              content: newContent,
+            }));
+            
+            showToast("✅ Image added to content!", "success");
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith("image/")) {
+        showToast("Converting image to base64...", "info");
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          const imgMarkdown = `\n![image](${base64})\n`;
+          
+          if (contentRef.current) {
+            const textarea = contentRef.current;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = formData.content.substring(0, start);
+            const after = formData.content.substring(end);
+            
+            const newContent = before + imgMarkdown + after;
+            setFormData((prev) => ({
+              ...prev,
+              content: newContent,
+            }));
+            
+            showToast("✅ Image added to content!", "success");
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,11 +279,20 @@ export default function EditBlogPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Blog Content <span className="text-red-500">*</span>
               </label>
+              <div className="mb-3 flex gap-3 items-center flex-wrap">
+                <div className="flex-1 min-w-max p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 <strong>Tip:</strong> You can paste images directly into content with Ctrl+V.
+                  </p>
+                </div>
+              </div>
               <textarea
+                ref={contentRef}
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                placeholder="Write your blog content here..."
+                onPaste={handleImagePaste}
+                placeholder="Write your blog content here... (You can paste images here)"
                 rows={10}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none text-gray-900 resize-none font-mono text-sm"
               />
@@ -292,6 +382,8 @@ export default function EditBlogPage() {
           </form>
         </div>
       </div>
+
+
     </AdminLayout>
   );
 }

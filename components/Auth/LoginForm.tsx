@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Input } from "@/components/Input/Input";
 import { showToast } from "@/components/Toast/Toast";
@@ -74,9 +75,11 @@ export default function LoginForm() {
 
     // Successful sign in
     showToast("Logged in successfully! Redirecting...", "success");
+    
+    // Redirect both admin and users to home page
     setTimeout(() => {
       router.push("/");
-    }, 2000);
+    }, 500);
   };
 
   return (

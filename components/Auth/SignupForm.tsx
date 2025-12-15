@@ -84,6 +84,10 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
+      // Set a 15 second timeout for the signup request
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +96,10 @@ export default function SignupForm() {
           email,
           password,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       const data = await res.json();
 
@@ -119,10 +126,19 @@ export default function SignupForm() {
       setLoading(false);
       triggerShakeAnimation();
       console.error("Signup fetch error:", err);
-      showToast(
-        "Signup failed. Please check your connection and try again.",
-        "error"
-      );
+      
+      // Check if it's an abort error (timeout)
+      if (err instanceof Error && err.name === "AbortError") {
+        showToast(
+          "Request timed out. Please try again or check your internet connection.",
+          "error"
+        );
+      } else {
+        showToast(
+          "Signup failed. Please check your connection and try again.",
+          "error"
+        );
+      }
     }
   };
 

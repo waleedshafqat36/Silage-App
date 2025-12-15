@@ -7,6 +7,7 @@ export interface IBlog extends Document {
   author: string;
   authorId: string;
   excerpt?: string;
+  imageLinks?: string;
   status: "published" | "draft";
   views: number;
   createdAt: Date;
@@ -21,6 +22,7 @@ const BlogSchema = new mongoose.Schema<IBlog>(
     author: { type: String, required: true },
     authorId: { type: String, required: true },
     excerpt: { type: String, default: "" },
+    imageLinks: { type: String, default: "" },
     status: { type: String, enum: ["published", "draft"], default: "draft" },
     views: { type: Number, default: 0 },
   },

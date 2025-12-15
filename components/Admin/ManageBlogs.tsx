@@ -16,6 +16,12 @@ interface Blog {
   thumbnail?: string;
 }
 
+interface DeleteConfirmDialog {
+  isOpen: boolean;
+  blogId: string;
+  blogTitle: string;
+}
+
 export default function ManageBlogs() {
   const router = useRouter();
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -25,6 +31,11 @@ export default function ManageBlogs() {
     "all" | "published" | "draft"
   >("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<DeleteConfirmDialog>({
+    isOpen: false,
+    blogId: "",
+    blogTitle: "",
+  });
 
   // Fetch blogs
   useEffect(() => {
@@ -34,7 +45,9 @@ export default function ManageBlogs() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/blogs");
+      const res = await fetch("/api/admin/blogs", {
+        cache: "no-store",
+      });
       const data = await res.json();
       setBlogs(Array.isArray(data) ? data : data.blogs || []);
     } catch (error) {
@@ -54,28 +67,47 @@ export default function ManageBlogs() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDeleteBlog = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this blog? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+  const openDeleteDialog = (id: string, title: string) => {
+    setDeleteDialog({
+      isOpen: true,
+      blogId: id,
+      blogTitle: title,
+    });
+  };
 
+  const closeDeleteDialog = () => {
+    setDeleteDialog({
+      isOpen: false,
+      blogId: "",
+      blogTitle: "",
+    });
+  };
+
+  const handleDeleteBlog = async (id: string) => {
     setLoadingId(id);
     try {
       const res = await fetch(`/api/blogs/${id}`, {
         method: "DELETE",
       });
 
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete blog");
+      }
 
-      setBlogs(blogs.filter((b) => b._id !== id));
-      showToast("Blog deleted successfully", "success");
+      // Remove from state immediately
+      setBlogs((prevBlogs) => prevBlogs.filter((b) => b._id !== id));
+      
+      showToast("✅ Blog deleted successfully", "success");
+      closeDeleteDialog();
+      
+      // Refresh to ensure consistency
+      setTimeout(() => {
+        fetchBlogs();
+      }, 500);
     } catch (error) {
       console.error("[Delete Blog Error]:", error);
-      showToast("Failed to delete blog", "error");
+      showToast(`❌ Failed to delete blog: ${error}`, "error");
     } finally {
       setLoadingId(null);
     }
@@ -246,7 +278,7 @@ export default function ManageBlogs() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteBlog(blog._id)}
+                    onClick={() => openDeleteDialog(blog._id, blog.title)}
                     disabled={loadingId === blog._id}
                     className={`flex-1 px-3 py-2 font-semibold text-sm rounded-lg transition-all duration-300 ${
                       loadingId === blog._id
@@ -260,6 +292,55 @@ export default function ManageBlogs() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            {/* Icon */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 flex justify-center">
+              <div className="text-5xl">🗑️</div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Blog?</h3>
+                <p className="text-sm text-gray-600 mt-2">
+                  Are you sure you want to delete "{deleteDialog.blogTitle}"?
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-xs text-red-700 font-semibold">
+                  ⚠️ This action cannot be undone. The blog will be permanently removed.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="bg-gray-50 px-6 py-4 flex gap-3 border-t">
+              <button
+                onClick={closeDeleteDialog}
+                disabled={loadingId === deleteDialog.blogId}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteBlog(deleteDialog.blogId)}
+                disabled={loadingId === deleteDialog.blogId}
+                className={`flex-1 px-4 py-2 font-semibold rounded-lg transition-all duration-300 ${
+                  loadingId === deleteDialog.blogId
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed opacity-50"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
+              >
+                {loadingId === deleteDialog.blogId ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

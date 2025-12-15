@@ -41,8 +41,12 @@ export default function BlogsPage() {
       const res = await fetch("/api/blogs");
       if (!res.ok) throw new Error("Failed to fetch blogs");
       const data = await res.json();
-      setBlogs(Array.isArray(data) ? data : data.blogs || []);
-      setFilteredBlogs(Array.isArray(data) ? data : data.blogs || []);
+      // Filter for published blogs only
+      const publishedBlogs = Array.isArray(data) 
+        ? data.filter((blog: Blog) => blog.status === "published")
+        : (data.blogs || []).filter((blog: Blog) => blog.status === "published");
+      setBlogs(publishedBlogs);
+      setFilteredBlogs(publishedBlogs);
     } catch (error) {
       console.error("Error fetching blogs:", error);
     } finally {
@@ -111,16 +115,7 @@ export default function BlogsPage() {
               >
                 {/* Blog Card */}
                 <div className="h-full flex flex-col">
-                  {/* Thumbnail */}
-                  {blog.thumbnail && (
-                    <div className="relative h-48 bg-gradient-to-br from-gray-300 to-gray-400 overflow-hidden">
-                      <img
-                        src={blog.thumbnail}
-                        alt={blog.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
+
 
                   {/* Content */}
                   <div className="p-6 flex flex-col flex-1">
@@ -146,6 +141,7 @@ export default function BlogsPage() {
                     <p className="text-gray-600 text-sm mb-4 flex-1 line-clamp-3">
                       {blog.excerpt || blog.content.substring(0, 150)}...
                     </p>
+
 
                     {/* Footer Info */}
                     <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-4">

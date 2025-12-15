@@ -113,23 +113,11 @@ export default function BlogPage({ params }: { params: { id: string } }) {
     <>
       <Navbar />
       <article className="min-h-screen bg-white">
-        {/* Hero Section */}
-        <div className="relative h-96 md:h-[500px] w-full bg-gray-300 overflow-hidden">
-          <img
-            src={blog.thumbnail}
-            alt={blog.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/1200x500?text=Blog";
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-
-          {/* Back Button */}
+        {/* Back Button */}
+        <div className="relative bg-gradient-to-r from-blue-50 to-green-50 py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-200">
           <button
             onClick={() => router.back()}
-            className="absolute top-6 left-6 z-10 px-4 py-2 bg-white/90 text-gray-900 font-semibold rounded-lg hover:bg-white transition-all duration-300 flex items-center gap-2"
+            className="px-4 py-2 bg-white/90 text-gray-900 font-semibold rounded-lg hover:bg-white transition-all duration-300 flex items-center gap-2"
           >
             ← Back
           </button>

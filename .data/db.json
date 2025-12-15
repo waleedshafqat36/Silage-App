@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "name": "MW",
+      "email": "Mm1@gmail.com",
+      "password": "$2b$10$3cQKb3YSdIHaF3u9uFWQh.erco9Qd9VkM2f5PxrpFA7yGfPCwipw6",
+      "role": "user",
+      "_id": "1765740039265",
+      "createdAt": "2025-12-14T19:20:39.265Z"
+    },
+    {
+      "name": "Waleed Shafqat",
+      "email": "w@gmail.com",
+      "password": "$2b$10$cjcMVwsJY7XCymPwUadWfOKs79wfpud.geNlYWgmJeCeUTrtz34n.",
+      "role": "user",
+      "_id": "1765740587062",
+      "createdAt": "2025-12-14T19:29:47.062Z"
+    },
+    {
+      "name": "Bilal",
+      "email": "b@gmail.com",
+      "password": "$2b$10$nk.Q84s.RF9KkbEFXxxGOeXROrjZcqdBt1ZFPtOOLr7OmC7g7JCPa",
+      "role": "user",
+      "_id": "1765740997636",
+      "createdAt": "2025-12-14T19:36:37.637Z"
+    },
+    {
+      "name": "bilal",
+      "email": "a@gmail.com",
+      "password": "$2b$10$R8EfFr5U/4jAbddUHBLH4.09Bn6ad0GShLOCxAIsDIyfNv0sMDkE6",
+      "role": "user",
+      "_id": "1765741958092",
+      "createdAt": "2025-12-14T19:52:38.092Z"
+    }
+  ]
+}

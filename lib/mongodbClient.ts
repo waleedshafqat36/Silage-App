@@ -15,12 +15,19 @@ declare global {
 if (process.env.NODE_ENV === "development") {
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+    // Attach a catch so a failed connection doesn't cause an unhandledRejection
+    global._mongoClientPromise = client.connect().catch((err) => {
+      console.error("MongoClient connection failed:", err);
+      throw err;
+    });
   }
   clientPromise = global._mongoClientPromise;
 } else {
   client = new MongoClient(uri);
-  clientPromise = client.connect();
+  clientPromise = client.connect().catch((err) => {
+    console.error("MongoClient connection failed:", err);
+    throw err;
+  });
 }
 
 export default clientPromise;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StatCardProps {
   title: string;
@@ -55,36 +55,92 @@ export function StatCard({ title, value, icon, trend, color }: StatCardProps) {
 }
 
 export default function DashboardHome() {
-  const [stats] = useState([
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([
     {
       title: "Total Blogs",
-      value: 145,
+      value: 0,
       icon: "📝",
-      trend: { value: 12, isPositive: true },
+      trend: { value: 0, isPositive: true },
       color: "green" as const,
     },
     {
-      title: "Total Users",
-      value: 892,
-      icon: "👥",
-      trend: { value: 8, isPositive: true },
+      title: "Published Blogs",
+      value: 0,
+      icon: "✅",
+      trend: { value: 0, isPositive: true },
       color: "blue" as const,
     },
     {
-      title: "Active Users",
-      value: 234,
-      icon: "🔥",
-      trend: { value: 15, isPositive: true },
+      title: "Draft Blogs",
+      value: 0,
+      icon: "📄",
+      trend: { value: 0, isPositive: true },
       color: "purple" as const,
     },
     {
-      title: "Total Comments",
-      value: 1250,
-      icon: "💬",
-      trend: { value: 5, isPositive: true },
+      title: "Total Users",
+      value: 0,
+      icon: "👥",
+      trend: { value: 0, isPositive: true },
       color: "orange" as const,
     },
   ]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [blogsRes, usersRes] = await Promise.all([
+        fetch("/api/admin/blogs"),
+        fetch("/api/admin/users"),
+      ]);
+
+      const blogs = await blogsRes.json();
+      const { users } = await usersRes.json();
+
+      const blogsArray = Array.isArray(blogs) ? blogs : [];
+      const publishedCount = blogsArray.filter(b => b.status === "published").length;
+      const draftCount = blogsArray.filter(b => b.status === "draft").length;
+
+      setStats([
+        {
+          title: "Total Blogs",
+          value: blogsArray.length,
+          icon: "📝",
+          trend: { value: 12, isPositive: true },
+          color: "green" as const,
+        },
+        {
+          title: "Published Blogs",
+          value: publishedCount,
+          icon: "✅",
+          trend: { value: 5, isPositive: true },
+          color: "blue" as const,
+        },
+        {
+          title: "Draft Blogs",
+          value: draftCount,
+          icon: "📄",
+          trend: { value: 3, isPositive: false },
+          color: "purple" as const,
+        },
+        {
+          title: "Total Users",
+          value: users?.length || 0,
+          icon: "👥",
+          trend: { value: 8, isPositive: true },
+          color: "orange" as const,
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
